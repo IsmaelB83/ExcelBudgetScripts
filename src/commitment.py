@@ -30,7 +30,7 @@ def process_commitment_data():
             log_entry = f'Entry updated [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}]: ' 
             for key in data:
                 if (data[key]["updated"]):    
-                    update_data_cell(new_sheet, i, data[key]["column"], data[key]["data"])
+                    update_data_cell(new_sheet, i, data[key]["column"], key, data[key].value)
                     log_entry += f'{key}#{data[key]["data"]}'
             print_log(PROCESS.COMMITMENT, LOG.WARNING, log_entry.strip())
         # check tagetik stills blank and PO exists (error)

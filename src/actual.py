@@ -1,59 +1,69 @@
 # Python Imports
 from openpyxl import load_workbook
+from copy import deepcopy
 # Own Imports
-from utils import check_previous_data, get_data_row, insert_data_row, print_log
-from constants import DATA_ACTUAL, LOG, PROCESS, PATH, FILENAMES
-
-# Checks if co_number already exists in final ACTUAL file (duplicated)
-def check_duplicated (file_sheet, co_number):
-    for i in range(2,  file_sheet.max_row + 1):
-        old_number = file_sheet.cell(row=i, column=22).value
-        if (old_number == co_number):
-            return True
-    return False
+from utils import check_duplicated, check_previous_data, check_default_assignments, get_data_row, insert_data_row, print_log
+from constants import DATA, LOG, PROCESS, PATH, FILENAMES
 
 # Loop trough /data/new/REAL.xlsx entries adding them to /data/old/REAL.xlsx into /data/final/REAL.xlsx file
 def process_actual_data(): 
     # Add new lines from NEW_ACTUAL to OLD_ACTUAL
-    old_workbook = load_workbook(PATH.OLD.value + FILENAMES.ACTUAL.value)
-    old_sheet = old_workbook.active
-    new_workbook = load_workbook(PATH.NEW.value + FILENAMES.ACTUAL.value)
-    new_sheet = new_workbook.active
+    old_actual_workbook = load_workbook(PATH.OLD.value + FILENAMES.ACTUAL.value)
+    old_actual_sheet = old_actual_workbook.active
+    new_actual_workbook = load_workbook(PATH.NEW.value + FILENAMES.ACTUAL.value)
+    new_actual_sheet = new_actual_workbook.active
+    # To check for missing tagetiks etc against old COMMITMENTS file
+    old_commitments_wb = load_workbook(PATH.OLD.value + FILENAMES.COMMITMENT.value)
+    old_commitments_sh = old_commitments_wb.active
 
     # Log
     print('\n')
-    print_log(PROCESS.ACTUAL, LOG.INFO, f'Start processing {str(new_sheet.max_row - 1)} rows...')
+    print_log(PROCESS.ACTUAL, LOG.INFO, f'Start processing {str(new_actual_sheet.max_row - 1)} rows...')
 
     # Loop trough rows in new actual file
     counter, counter_error, counter_warnings = 0, 0, 0
-    for i in range(2, new_sheet.max_row + 1):
+    max_rows_check = old_actual_sheet.max_row + 1
+    for i in range(2, new_actual_sheet.max_row + 1):
         # get data from row
-        data = get_data_row(new_sheet, i, DATA_ACTUAL.copy())
-        # check if co_number already exists in final_actual
-        if (check_duplicated(old_sheet, data["co_number"]["data"])):
+        data = get_data_row(PROCESS.ACTUAL, new_actual_sheet, i, deepcopy(DATA))
+        # check if co_number already exists in final_actual (only take into account original row number)
+        if (check_duplicated(old_actual_sheet, max_rows_check, data["co_number"]["data"])):
             counter_error += 1
             print_log(PROCESS.ACTUAL, LOG.ERROR, f'Entry duplicated [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}] - cost {str(data["coste"]["data"])}')
             continue
         # row relevante to insert
         counter += 1
-        # check for previous information
-        flag_updated, data = check_previous_data(old_sheet, data)
+        # check for previous information (first against old COMMITMENTS then ACTUAL)
+        flag_updated, data = check_previous_data(PROCESS.COMMITMENT, old_commitments_sh, data)
         if (flag_updated):
             counter_warnings += 1
-            log_entry = f'Entry updated [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}]: ' 
+            log_entry = f'Entry updated from COMMITMENT [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}]: ' 
             for key in data:
                 if (data[key]["updated"]):
                     log_entry += f'{key}#{data[key]["data"]} '
             print_log(PROCESS.ACTUAL, LOG.WARNING, log_entry.strip())
-        # check tagetik stills blank (error)
-        if (data["tagetik"]["data"] == ""):
-            counter_warnings += 1
-            print_log(PROCESS.ACTUAL, LOG.WARNING, f'Tagetik not found [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}] - cost {str(data["coste"]["data"])}')
+        else:
+            flag_updated, data = check_previous_data(PROCESS.ACTUAL, old_actual_sheet, data)
+            if (flag_updated):
+                counter_warnings += 1
+                log_entry = f'Entry updated from ACTUAL [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}]: ' 
+                for key in data:
+                    if (data[key]["updated"]):
+                        log_entry += f'{key}#{data[key]["data"]} '
+                print_log(PROCESS.ACTUAL, LOG.WARNING, log_entry.strip())
+        # check tagetik stills blank
+        if (data["tagetik"]["data"] == None):
+            flag_updated, data = check_default_assignments(PROCESS.ACTUAL, data)
+            if (flag_updated):
+                counter_warnings += 1
+                print_log(PROCESS.ACTUAL, LOG.WARNING, f'Tagetik default update [row {i} {data["co_number"]["data"]}] - tagetik#{str(data["tagetik"]["data"])}')
+            else:
+                print_log(PROCESS.ACTUAL, LOG.ERROR, f'Tagetik not found [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}] - cost {str(data["coste"]["data"])}')
         # insert data at the end of file
-        insert_data_row(old_sheet, old_sheet.max_row + 1, data)
+        insert_data_row(PROCESS.ACTUAL, old_actual_sheet, old_actual_sheet.max_row + 1, data)
     
     # New actual file saved in final path
-    old_workbook.save(PATH.FINAL.value + FILENAMES.ACTUAL.value)
+    old_actual_workbook.save(PATH.FINAL.value + FILENAMES.ACTUAL.value)
     
     # Log
     print_log(PROCESS.ACTUAL, LOG.INFO, f'Finished processing... {str(counter)} rows added (WARNINGS: {str(counter_warnings)} - ERRORS: {str(counter_error)})')

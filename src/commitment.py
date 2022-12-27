@@ -1,8 +1,9 @@
 # Python Imports
 from openpyxl import load_workbook
+from copy import deepcopy
 # Own Imports
-from utils import check_previous_data, get_data_row, update_data_cell, print_log
-from constants import DATA_COMMITMENT, LOG, PROCESS, PATH, FILENAMES
+from utils import check_previous_data, get_data_row, update_data_cell, print_log, get_column_index
+from constants import DATA, LOG, PROCESS, PATH, FILENAMES
 
 # Loop trough /data/new/REAL.xlsx entries adding them to /data/old/REAL.xlsx into /data/final/REAL.xlsx file
 def process_commitment_data(): 
@@ -20,17 +21,17 @@ def process_commitment_data():
     counter, counter_error, counter_warnings = 0, 0, 0
     for i in range(2, new_sheet.max_row + 1):
         # get data from row
-        data = get_data_row(new_sheet, i, DATA_COMMITMENT.copy())
+        data = get_data_row(PROCESS.COMMITMENT, new_sheet, i, deepcopy(DATA))
         # row relevante to insert
         counter += 1
         # check for previous information
-        flag_updated, data = check_previous_data(old_sheet, data)
+        flag_updated, data = check_previous_data(PROCESS.ACTUAL, old_sheet, data)
         if (flag_updated):
             counter_warnings += 1
             log_entry = f'Entry updated [row {i} {data["po_number"]["data"]}-{data["po_position"]["data"]}]: ' 
             for key in data:
                 if (data[key]["updated"]):    
-                    update_data_cell(new_sheet, i, data[key]["column"], key, data[key].value)
+                    update_data_cell(new_sheet, i, data[key][get_column_index(PROCESS.COMMITMENT)], data[key].value)
                     log_entry += f'{key}#{data[key]["data"]}'
             print_log(PROCESS.COMMITMENT, LOG.WARNING, log_entry.strip())
         # check tagetik stills blank and PO exists (error)

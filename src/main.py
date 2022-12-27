@@ -8,7 +8,6 @@ from utils import print_log
 
 # Process actual and then commitment 
 def main():
-    
     # Process actual
     if (path.isfile(PATH.NEW.value + FILENAMES.ACTUAL.value)):  
         process_actual_data()

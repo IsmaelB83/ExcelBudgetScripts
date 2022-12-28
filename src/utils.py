@@ -12,34 +12,37 @@ def check_duplicated (file_sheet, max_row, co_number):
 # For non-po costs this function tries with default assignments based on allocation and vendor information
 def check_default_assignments (process, data_row):
     # Initialization
-    flag_updated = False
+    flag_updated = True
     # Relevant fields
-    orden = data_row["orden"]["data"]
-    proveedor = data_row["proveedor"]["data"]
-    descripcion_cuenta = data_row["descripcion_cuenta"]["data"]
+    orden = data_row['orden']['data']
+    proveedor = data_row['proveedor']['data']
+    descripcion_cuenta = data_row['descripcion_cuenta']['data']
     if (process.value == 'ACTUAL'):
-        clase_documento = data_row["clase_documento"]["data"]
+        clase_documento = data_row['clase_documento']['data']
         if (clase_documento == 'AA' or clase_documento == 'ZL'):    # Capex (ignore)
-            flag_updated = True
-            data_row["ignorar"]["updated"] = True
-            data_row["ignorar"]["data"] = True
-            data_row["observaciones"]["updated"] = True
-            data_row["observaciones"]["data"] = 'CAPEX'
-        elif(orden == 100000000192):                                # Licencias
-            data_row["tagetik"]["updated"] = True
-            data_row["tagetik"]["data"] = 'EN00272'
-        elif(orden == 100000000193):                                # Corp
-            data_row["tagetik"]["updated"] = True
-            data_row["tagetik"]["data"] = 'NA'
-        elif(orden == 100000000893 ):                               # Comms
-            data_row["tagetik"]["updated"] = True
-            data_row["tagetik"]["data"] = 'EN00187'
-        elif(orden == 100000000350 and proveedor == 10002973):      # Renting
-            data_row["tagetik"]["updated"] = True
-            data_row["tagetik"]["data"] = 'EN00166'
-        elif(orden == 100000000354 and proveedor == 30002547):      # Tasas RadioElectríco
-            data_row["tagetik"]["updated"] = True
-            data_row["tagetik"]["data"] = 'EN00201'
+            data_row['ignorar']['updated'] = True
+            data_row['ignorar']['data'] = True
+            data_row['observaciones']['updated'] = True
+            data_row['observaciones']['data'] = 'CAPEX'
+        elif(orden == '100000000192'):                                # Licencias
+            data_row['tagetik']['updated'] = True
+            data_row['tagetik']['data'] = 'EN00272'
+        elif(orden == '100000000193'):                                # Corp
+            data_row['tagetik']['updated'] = True
+            data_row['tagetik']['data'] = 'NA'
+        elif(orden == '100000000893' ):                               # Comms
+            data_row['tagetik']['updated'] = True
+            data_row['tagetik']['data'] = 'EN00187'
+        elif(orden == '100000000350' and proveedor == '10002973'):      # Renting
+            data_row['tagetik']['updated'] = True
+            data_row['tagetik']['data'] = 'EN00166'
+        elif(orden == '100000000354' and proveedor == '30002547'):      # Tasas RadioElectríco
+            data_row['tagetik']['updated'] = True
+            data_row['tagetik']['data'] = 'EN00201'
+        else:
+            flag_updated = False
+    else:
+        flag_updated = False
     return flag_updated, data_row
     
 # Checks if previous entry in ACTUAL/COMMITMENT file has different information in relevant fields for the dashboard
@@ -47,24 +50,24 @@ def check_default_assignments (process, data_row):
 def check_previous_data (process, file_sheet, data_row):
     # Initialization
     flag_updated = False
-    current_pedi = data_row["po_number"]["data"]
-    current_posi = data_row["po_position"]["data"]
+    current_pedi = data_row['po_number']['data']
+    current_posi = data_row['po_position']['data']
     # Only check items coming from POs
     if (current_pedi == None or current_pedi == ''):
         return False, data_row
     # Loop trough all old actual file
     for i in range(2,  file_sheet.max_row + 1):
-        old_pedi = file_sheet.cell(row=i, column=data_row["po_number"]['column']).value
-        old_posi = file_sheet.cell(row=i, column=data_row["po_position"]['column']).value
+        old_pedi = file_sheet.cell(row=i, column=data_row['po_number']['column']).value
+        old_posi = file_sheet.cell(row=i, column=data_row['po_position']['column']).value
         # Only check against PO items
         if (old_pedi != None and old_pedi == current_pedi and old_posi == current_posi):
             for key in data_row :
-                if (data_row[key]["check"]):
+                if (data_row[key]['check']):
                     old_data = get_data_cell(process, file_sheet, i, key)
-                    if (old_data != data_row[key]["data"]):
+                    if (old_data != data_row[key]['data']):
                         flag_updated = True
-                        data_row[key]["data"] = old_data
-                        data_row[key]["updated"] = True
+                        data_row[key]['data'] = old_data
+                        data_row[key]['updated'] = True
             return flag_updated, data_row
     return False, data_row
 
@@ -82,20 +85,23 @@ def get_data_row(process, sheet, row, data):
         if (column_index != None):
             raw_data = sheet.cell(row=row, column=column_index).value
             try:
-                if (raw_data == None or raw_data == '' or data[key]["type"] == 'string'):
-                    data[key]["data"] = raw_data
-                elif (data[key]["type"] == 'int'):
-                    data[key]["data"] = int(raw_data)
-                elif (data[key]["type"] == 'float'):
-                    data[key]["data"] = float(raw_data)
+                # Solicitante replaces 'i:0#.w|acciona\\' with nothing
+                if (key == 'solicitante'):
+                    data[key]['data'] = raw_data.replace('i:0#.w|acciona\\', '')
+                elif (raw_data == None or raw_data == '' or data[key]['type'] == 'string'):
+                    data[key]['data'] = raw_data
+                elif (data[key]['type'] == 'int'):
+                    data[key]['data'] = int(raw_data)
+                elif (data[key]['type'] == 'float'):
+                    data[key]['data'] = float(raw_data)
             except Exception:
-                data[key]["data"] = raw_data
+                data[key]['data'] = raw_data
     return data
 
 # Insert current data dictionary into destination excel sheet
-def insert_data_row(process, sheet, row, data): 
+def insert_data_row(sheet, row, data): 
     for key in data:
-        sheet.cell(row=row, column=data[key]['column']).value = data[key]["data"]
+        sheet.cell(row=row, column=data[key]['column']).value = data[key]['data']
 
 # Updates data of specific cell
 def update_data_cell(sheet, row, col, data): 

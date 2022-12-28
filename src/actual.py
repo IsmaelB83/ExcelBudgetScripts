@@ -51,16 +51,17 @@ def process_actual_data():
                         log_entry += f'{key}#{data[key]["data"]}##'
                 print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], log_entry.strip())
         # check tagetik stills blank
-        if (data["tagetik"]["data"] == None):
+        if (data["tagetik"]["data"] == None or data["tagetik"]["data"] == ''):
             flag_updated, data = check_default_assignments(PROCESS.ACTUAL, data)
             if (flag_updated):
                 counter_warnings += 1
-                print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["cost"]["data"], 'Tagetik default mapping update')
+                print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], f'Tagetik default mapping update {data["descripcion_orden"]["data"]}-{data["tagetik"]["data"]}')
             else:
                 counter_error += 1
-                print_log(PROCESS.ACTUAL, LOG.ERROR, i, data["po_number"]["data"], data["po_position"]["data"], data["cost"]["data"], 'Tagetik not found')
+                data['tagetik']['column'] = 'EN99999'
+                print_log(PROCESS.ACTUAL, LOG.ERROR, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], 'Tagetik not found')
         # insert data at the end of file
-        insert_data_row(PROCESS.ACTUAL, old_actual_sheet, old_actual_sheet.max_row + 1, data)
+        insert_data_row(old_actual_sheet, old_actual_sheet.max_row + 1, data)
     
     # New actual file saved in final path
     old_actual_workbook.save(PATH.FINAL.value + FILENAMES.ACTUAL.value)

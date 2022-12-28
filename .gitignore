@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 
 # Ignorar excels
+data/
 *.xlsx
+logs

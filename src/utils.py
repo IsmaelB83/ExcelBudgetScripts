@@ -1,3 +1,6 @@
+# Own imports
+from constants import DATA_ACTUAL, DATA_COMMITMENT, LOG_ERRORS, LOG_WARNING
+
 # Checks if co_number already exists in final ACTUAL file (duplicated)
 def check_duplicated (file_sheet, max_row, co_number):
     for i in range(2,  max_row):
@@ -7,7 +10,7 @@ def check_duplicated (file_sheet, max_row, co_number):
     return False
 
 # For non-po costs this function tries with default assignments based on allocation and vendor information
-def check_default_assignments (process, file_sheet, data_row):
+def check_default_assignments (process, data_row):
     # Initialization
     flag_updated = False
     # Relevant fields
@@ -47,17 +50,17 @@ def check_previous_data (process, file_sheet, data_row):
     current_pedi = data_row["po_number"]["data"]
     current_posi = data_row["po_position"]["data"]
     # Only check items coming from POs
-    if (current_pedi == None or current_posi == None):
+    if (current_pedi == None or current_pedi == ''):
         return False, data_row
     # Loop trough all old actual file
     for i in range(2,  file_sheet.max_row + 1):
-        old_pedi = file_sheet.cell(row=i, column=data_row["po_number"][get_column_index(process)]).value
-        old_posi = file_sheet.cell(row=i, column=data_row["po_position"][get_column_index(process)]).value
+        old_pedi = file_sheet.cell(row=i, column=data_row["po_number"]['column']).value
+        old_posi = file_sheet.cell(row=i, column=data_row["po_position"]['column']).value
         # Only check against PO items
-        if (old_pedi != None and old_posi != None and old_pedi == current_pedi and old_posi == current_posi):
+        if (old_pedi != None and old_pedi == current_pedi and old_posi == current_posi):
             for key in data_row :
                 if (data_row[key]["check"]):
-                    old_data = get_data_cell(process, file_sheet, i, data_row[key])
+                    old_data = get_data_cell(process, file_sheet, i, key)
                     if (old_data != data_row[key]["data"]):
                         flag_updated = True
                         data_row[key]["data"] = old_data
@@ -66,29 +69,41 @@ def check_previous_data (process, file_sheet, data_row):
     return False, data_row
 
 # Get data from cell depending of the data structure (ACTUAL/COMMITMENT)
-def get_data_cell(process, file_sheet, row, item):
-    return file_sheet.cell(row=row, column=item[get_column_index(process)]).value 
+def get_data_cell(process, file_sheet, row, key):
+    col_index = DATA_ACTUAL[key]['column']
+    if (process.value == 'COMMITMENT'):
+        col_index = DATA_COMMITMENT[key]['column']
+    return file_sheet.cell(row=row, column=col_index).value
     
 # Extract data information form a row in the ACTUAL file
 def get_data_row(process, sheet, row, data):
     for key in data:
-        data[key]["data"] = sheet.cell(row=row, column=data[key][get_column_index(process)]).value
+        column_index = data[key]['column']
+        if (column_index != None):
+            raw_data = sheet.cell(row=row, column=column_index).value
+            try:
+                if (raw_data == None or raw_data == '' or data[key]["type"] == 'string'):
+                    data[key]["data"] = raw_data
+                elif (data[key]["type"] == 'int'):
+                    data[key]["data"] = int(raw_data)
+                elif (data[key]["type"] == 'float'):
+                    data[key]["data"] = float(raw_data)
+            except Exception:
+                data[key]["data"] = raw_data
     return data
 
 # Insert current data dictionary into destination excel sheet
 def insert_data_row(process, sheet, row, data): 
     for key in data:
-        sheet.cell(row=row, column=data[key][get_column_index(process)]).value = data[key]["data"]
+        sheet.cell(row=row, column=data[key]['column']).value = data[key]["data"]
 
 # Updates data of specific cell
 def update_data_cell(sheet, row, col, data): 
     sheet.cell(row=row, column=col).value = data
 
 # Prints log
-def print_log(process, type, log):
-    print(f'[{process.value}] - {type.value} - {log}')
-    
-def get_column_index (process):
-    if (process.value == 'COMMITMENT'):
-        return 'column_com'
-    return 'column_act'
+def print_log(process, type, po_number, po_position, co_number, amount, message):
+    if (type.value == 'E'): 
+        LOG_ERRORS.append([process.value, type.value, po_number, po_position, co_number, amount, message])
+    else:
+        LOG_WARNING.append([process.value, type.value, po_number, po_position, co_number, amount, message])

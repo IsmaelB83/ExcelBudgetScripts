@@ -24,23 +24,33 @@ def check_default_assignments (process, data_row):
             data_row['ignorar']['data'] = True
             data_row['observaciones']['updated'] = True
             data_row['observaciones']['data'] = 'CAPEX'
-        elif(orden == '100000000192'):                                # Licencias
-            data_row['tagetik']['updated'] = True
-            data_row['tagetik']['data'] = 'EN00272'
-        elif(orden == '100000000193'):                                # Corp
-            data_row['tagetik']['updated'] = True
-            data_row['tagetik']['data'] = 'NA'
-        elif(orden == '100000000893' ):                               # Comms
-            data_row['tagetik']['updated'] = True
-            data_row['tagetik']['data'] = 'EN00187'
-        elif(orden == '100000000350' and proveedor == '10002973'):      # Renting
-            data_row['tagetik']['updated'] = True
-            data_row['tagetik']['data'] = 'EN00166'
-        elif(orden == '100000000354' and proveedor == '30002547'):      # Tasas RadioElectríco
-            data_row['tagetik']['updated'] = True
-            data_row['tagetik']['data'] = 'EN00201'
         else:
-            flag_updated = False
+            match orden:
+                case '100000000192':                                # Licencias
+                    data_row['tagetik']['updated'] = True
+                    data_row['tagetik']['data'] = 'EN00272'
+                case '100000000193':                                # Corp
+                    data_row['tagetik']['updated'] = True
+                    data_row['tagetik']['data'] = 'NA'
+                case '100000000893':                                # Comms
+                    data_row['tagetik']['updated'] = True
+                    data_row['tagetik']['data'] = 'EN00187'
+                case '100000000350':                            
+                    match proveedor:
+                        case '10002973':                            # Renting  
+                            data_row['tagetik']['updated'] = True
+                            data_row['tagetik']['data'] = 'EN00166'
+                        case _:
+                            flag_updated = False
+                case '100000000354':
+                    match proveedor:
+                        case '30002547':                            # Tasas RadioElectríco
+                            data_row['tagetik']['updated'] = True
+                            data_row['tagetik']['data'] = 'EN00201'
+                        case _:
+                            flag_updated = False
+                case _:
+                    flag_updated = False
     else:
         flag_updated = False
     return flag_updated, data_row
@@ -85,15 +95,20 @@ def get_data_row(process, sheet, row, data):
         if (column_index != None):
             raw_data = sheet.cell(row=row, column=column_index).value
             try:
-                # Solicitante replaces 'i:0#.w|acciona\\' with nothing
-                if (key == 'solicitante'):
-                    data[key]['data'] = raw_data.replace('i:0#.w|acciona\\', '')
-                elif (raw_data == None or raw_data == '' or data[key]['type'] == 'string'):
+                # Transform data format
+                if (raw_data == None or raw_data == ''):
                     data[key]['data'] = raw_data
-                elif (data[key]['type'] == 'int'):
-                    data[key]['data'] = int(raw_data)
-                elif (data[key]['type'] == 'float'):
-                    data[key]['data'] = float(raw_data)
+                else:
+                    match data[key]['type']:
+                        case 'string':
+                            # Solicitante replaces 'i:0#.w|acciona\\' with nothing
+                            if (key == 'solicitante'):
+                                raw_data = raw_data.replace('i:0#.w|acciona\\', '')
+                            data[key]['data'] = raw_data
+                        case 'int':
+                            data[key]['data'] = int(raw_data)
+                        case 'float':
+                            data[key]['data'] = float(raw_data)
             except Exception:
                 data[key]['data'] = raw_data
     return data

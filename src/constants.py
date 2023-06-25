@@ -20,7 +20,7 @@ class FILENAMES(Enum):
     
 DATA_ACTUAL = {
     "sociedad":             {  "column": 1,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
-    "orden":                {  "column": 2,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
+    "orden":                {  "column": 2,   "data": "",  "check": True,   "updated": False,  "type": "string"  },
     "descripcion_orden":    {  "column": 3,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
     "proveedor":            {  "column": 4,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
     "po_number":            {  "column": 5,   "data": "",  "check": False,  "updated": False,  "type": "int"     },
@@ -47,7 +47,7 @@ DATA_ACTUAL = {
 
 DATA_COMMITMENT = {
     "sociedad":             {  "column": 1,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
-    "orden":                {  "column": 2,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
+    "orden":                {  "column": 2,   "data": "",  "check": True,   "updated": False,  "type": "string"  },
     "descripcion_orden":    {  "column": 3,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
     "proveedor":            {  "column": 4,   "data": "",  "check": False,  "updated": False,  "type": "string"  },
     "po_number":            {  "column": 5,   "data": "",  "check": False,  "updated": False,  "type": "int"     },

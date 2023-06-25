@@ -26,25 +26,30 @@ def check_default_assignments (process, data_row):
             data_row['observaciones']['data'] = 'CAPEX'
         else:
             match orden:
-                case '100000000192':                                # Licencias
+                case 100000002124:                                
+                    match proveedor:
+                        case 'V-EH01':                              # Digital HUB
+                            data_row['tagetik']['updated'] = True
+                            data_row['tagetik']['data'] = 'ENTD_TD001'
+                case 100000000192:                                # Licencias
                     data_row['tagetik']['updated'] = True
                     data_row['tagetik']['data'] = 'EN00272'
-                case '100000000193':                                # Corp
+                case 100000000193:                                # Corp
                     data_row['tagetik']['updated'] = True
                     data_row['tagetik']['data'] = 'NA'
-                case '100000000893':                                # Comms
+                case 100000000893:                                # Comms
                     data_row['tagetik']['updated'] = True
                     data_row['tagetik']['data'] = 'EN00187'
-                case '100000000350':                            
+                case 100000000350:                            
                     match proveedor:
-                        case '10002973':                            # Renting  
+                        case 10002973:                            # Renting  
                             data_row['tagetik']['updated'] = True
                             data_row['tagetik']['data'] = 'EN00166'
                         case _:
                             flag_updated = False
-                case '100000000354':
+                case 100000000354:
                     match proveedor:
-                        case '30002547':                            # Tasas RadioElectríco
+                        case 30002547:                            # Tasas RadioElectríco
                             data_row['tagetik']['updated'] = True
                             data_row['tagetik']['data'] = 'EN00201'
                         case _:
@@ -67,8 +72,13 @@ def check_previous_data (process, file_sheet, data_row):
         return False, data_row
     # Loop trough all old actual file
     for i in range(2,  file_sheet.max_row + 1):
-        old_pedi = file_sheet.cell(row=i, column=data_row['po_number']['column']).value
-        old_posi = file_sheet.cell(row=i, column=data_row['po_position']['column']).value
+        # Parse int
+        try:
+            old_pedi = int(file_sheet.cell(row=i, column=data_row['po_number']['column']).value)
+            old_posi = int(file_sheet.cell(row=i, column=data_row['po_position']['column']).value)
+        except:
+            old_pedi = file_sheet.cell(row=i, column=data_row['po_number']['column']).value
+            old_posi = file_sheet.cell(row=i, column=data_row['po_position']['column']).value
         # Only check against PO items
         if (old_pedi != None and old_pedi == current_pedi and old_posi == current_posi):
             for key in data_row :

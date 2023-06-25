@@ -28,7 +28,7 @@ def process_actual_data():
         # check if co_number already exists in final_actual (only take into account original row number)
         if (check_duplicated(old_actual_sheet, max_rows_check, data["co_number"]["data"])):
             counter_error += 1
-            print_log(PROCESS.ACTUAL, LOG.ERROR, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], 'Entry duplicated')
+            print_log(PROCESS.ACTUAL, LOG.ERROR, data["po_number"]["data"], data["po_position"]["data"], data["co_number"]["data"], data["coste"]["data"], 'Entry duplicated')
             continue
         # row relevante to insert
         counter += 1
@@ -40,7 +40,7 @@ def process_actual_data():
             for key in data:
                 if (data[key]["updated"]):
                     log_entry += f'{key}#{data[key]["data"]}##'
-            print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], log_entry.strip())
+            print_log(PROCESS.ACTUAL, LOG.WARNING, data["po_number"]["data"], data["po_position"]["data"], data["co_number"]["data"], data["coste"]["data"], log_entry.strip())
         else:
             flag_updated, data = check_previous_data(PROCESS.ACTUAL, old_actual_sheet, data)
             if (flag_updated):
@@ -49,17 +49,19 @@ def process_actual_data():
                 for key in data:
                     if (data[key]["updated"]):
                         log_entry += f'{key}#{data[key]["data"]}##'
-                print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], log_entry.strip())
+                print_log(PROCESS.ACTUAL, LOG.WARNING, data["po_number"]["data"], data["po_position"]["data"], data["co_number"]["data"], data["coste"]["data"], log_entry.strip())
         # check tagetik stills blank
         if (data["tagetik"]["data"] == None or data["tagetik"]["data"] == ''):
             flag_updated, data = check_default_assignments(PROCESS.ACTUAL, data)
             if (flag_updated):
                 counter_warnings += 1
-                print_log(PROCESS.ACTUAL, LOG.WARNING, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], f'Tagetik default mapping update {data["descripcion_orden"]["data"]}-{data["tagetik"]["data"]}')
+                print_log(PROCESS.ACTUAL, LOG.WARNING, data["po_number"]["data"], data["po_position"]["data"], data["co_number"]["data"], data["coste"]["data"], f'Tagetik default mapping update {data["descripcion_orden"]["data"]}-{data["tagetik"]["data"]}')
             else:
                 counter_error += 1
-                data['tagetik']['column'] = 'EN99999'
-                print_log(PROCESS.ACTUAL, LOG.ERROR, i, data["po_number"]["data"], data["po_position"]["data"], data["coste"]["data"], 'Tagetik not found')
+                print_log(PROCESS.ACTUAL, LOG.ERROR, data["po_number"]["data"], data["po_position"]["data"], data["co_number"]["data"], data["coste"]["data"], 'Tagetik not found')
+        # check vendor stills blank
+        if (data["proveedor"]["data"] == None or data["proveedor"]["data"] == ''):
+            data["proveedor"]["data"] = '-'
         # insert data at the end of file
         insert_data_row(old_actual_sheet, old_actual_sheet.max_row + 1, data)
     

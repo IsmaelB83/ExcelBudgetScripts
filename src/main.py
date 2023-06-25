@@ -14,12 +14,12 @@ def main():
     # Save reference to original stdout
     original_stdout = sys.stdout
     
-    # Process actual
+    # # Process actual
     if (path.isfile(PATH.NEW.value + FILENAMES.ACTUAL.value)):  
         process_actual_data()
     else:
         print(f'\n{PROCESS.ACTUAL.value}, File not found...') 
-    
+
     # Process commitment
     if (path.isfile(PATH.NEW.value + FILENAMES.COMMITMENT.value)):  
         process_commitment_data()

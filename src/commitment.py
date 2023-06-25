@@ -43,10 +43,12 @@ def process_commitment_data():
         # Update solicitante
         if (data['solicitante']['data'] != None):
             update_data_cell(new_sheet, i, data['solicitante']['column'], data['solicitante']['data'].replace('i:0#.w|acciona\\', ''))
+        # Update proveedor
+        if (data['proveedor']['data'] != None or data['proveedor']['data'] == ''):
+            data['proveedor']['data'] = '-'
         # check tagetik stills blank and PO exists (error)
         if ((data["tagetik"]["data"] == None or data["tagetik"]["data"] == '') and data["ignorar"]["data"] != True):
             counter_error += 1
-            update_data_cell(new_sheet, i, data['tagetik']['column'], 'EN99999')
             print_log(PROCESS.COMMITMENT, LOG.ERROR, i, data["po_number"]["data"], data["po_position"]["data"], data["comprometido"]["data"], 'Tagetik not found')    
     
     # Add forecast entries from old files
